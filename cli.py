@@ -7,8 +7,12 @@ prompt: str = ""
 
 print("/q to quit\n") 
 
-while prompt != "/quit":
+while True:
 	prompt = input(">>> ")
+	if prompt == "/q": break
 	dyn_state = {"messages": [HumanMessage(content=prompt)]}
+	dyn_state = app.invoke(dyn_state)
 	print(dyn_state["messages"][-1].content) 
+
+	
 

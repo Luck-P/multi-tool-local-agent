@@ -19,7 +19,7 @@ expert = ChatOpenAI(
 )
 
 vision = ChatOpenAI(
-	base_url = "http://localhost:8081/v1",
+	base_url = "http://localhost:8082/v1",
 	api_key="none",
 	model="qwen2.5-vl-3B-instruct-gguf",
 	temperature=0.2
