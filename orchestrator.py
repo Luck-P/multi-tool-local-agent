@@ -67,7 +67,7 @@ workflow.add_edge(START, "router")
 
 #conditional edges 
 
-def router_output():
+def router_output(state: State) -> str:
 	return state["nextnode"] #returns (pass) the output of the 'router' node 
 
 workflow.add_conditional_edges(
