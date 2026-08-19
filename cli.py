@@ -22,7 +22,7 @@ while True:
 		pic_path = Path(pburst[tagr+1])
 		print(f"location: {pic_path}...") 
 		if pic_path.is_file():
-			dyn_state = {"pic_path": pic_path}
+			dyn_state["pic_path"] = pic_path
 		else:
 			print("-> invalid file path")
 			continue
@@ -30,7 +30,10 @@ while True:
 		for i in range(2):
 			pburst.pop(tagr)
 		#rebuilding the prompt string 
-		prompt = ' '.join(pburst) 
+		prompt = ' '.join(pburst)
+	else:
+		dyn_state["pic_path"] = None #ensuring no picture path remains across a conversation , which would otherwise trigger vision model constantly 
+		
 		
 	if prompt == ".history":
 		print("history pretty_print() process...")
@@ -41,7 +44,8 @@ while True:
 	if "messages" in dyn_state:
 		dyn_state["messages"].append(HumanMessage(content=prompt))
 	else:
-		dyn_state = {"messages": [HumanMessage(content=prompt)]}
+		dyn_state["messages"] = HumanMessage(content=prompt)
+		
 		
 	dyn_state = app.invoke(dyn_state)
 	print(dyn_state["messages"][-1].content) 

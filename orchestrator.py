@@ -45,12 +45,11 @@ def pic_encoding(path: str):
 
 
 class Route_Structure(BaseModel):
-	target: Literal["direct", "math_code", "vision"] = Field( 
+	target: Literal["direct", "math_code"] = Field( 
 		description = (
 		"Select the appropriate option to perform the task"
-		"direct > for conversation"
-		"math_code > for calculation or programmation"
-		"vision > when a picture is submitted"
+		"direct > for trivial and conversational tasks"
+		"math_code > for calculation or programmation tasks"
 		)
 	)
 	reasoning: str = Field( description="synthetic justification for model choice")
@@ -59,15 +58,18 @@ router = generic.with_structured_output(Route_Structure)
 
 class State(TypedDict):
 	messages: Annotated[list[BaseMessage], add_messages]
-	pic_path: str
+	pic_path: Optional[str]
 	nextnode: str
 
 def router_node(state: State):
 	m_payload = list(state["messages"])
 	if state.get("pic_path"):
-		m_payload[-1] = HumanMessage(content=f"{m_payload[-1].content}\n[System Context: A picture has been submitted by the User. It can be evaluated by selecting the Vision tool]")
-	tool: Route_Structure = router.invoke(m_payload)
-	return {"nextnode": tool.target}
+		print("router node - picture acknowledged") 
+		nn_val = "vision"
+	else:
+		tool: Route_Structure = router.invoke(m_payload)
+		nn_val = tool.target
+	return {"nextnode": nn_val}
 
 def direct_node(state: State):
 	answer = generic.invoke(state["messages"])
@@ -81,11 +83,13 @@ def vision_node(state: State):
 	if not state.get("pic_path"): 	
 		print("vision node failure...") 
 	pic_url = pic_encoding(state["pic_path"])
-	payload = [
+	print(f"picture encoded as url {pic_url[:50]}...")
+	payload = [HumanMessage(
+		content=[
 		{"type": "text", "text": state["messages"][-1].content},
 		{"type": "image_url", "image_url": {"url": pic_url} }
-	]
-	
+		]
+	)]
 	answer = vision.invoke(payload)
 	return {"messages": [answer]}
 
