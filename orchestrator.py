@@ -1,8 +1,11 @@
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
-from typing import Literal , Annotated, TypedDict
+from typing import Literal , Annotated, TypedDict, Optional
 from langgraph.graph import StateGraph, START, END , add_messages
+#picture processing
+import base64
+import filetype
 
 generic = ChatOpenAI(
 	base_url="http://localhost:8080/v1",
@@ -25,9 +28,30 @@ vision = ChatOpenAI(
 	temperature=0.2
 )
 
+#encoding picture
+
+def pic_encoding(path: str):
+	print("encoding picture...")
+	with open(path, "rb") as pobj:
+		pic = pobj.read()
+		print("picture data read correctly...")
+		picmime = filetype.guess(pic).mime
+		if not picmime:
+			return False
+		return f"data:{picmime};base64,{base64.b64encode(pic).decode('utf-8')}"
+		#return (picmime,base64.b64encode(pic).decode('utf-8'))
+	#directly generates the OpenAI protocol-expected image url 
+	
+
+
 class Route_Structure(BaseModel):
 	target: Literal["direct", "math_code", "vision"] = Field( 
-		description = "Select the appropriate model to perform the task or answer directly"
+		description = (
+		"Select the appropriate option to perform the task"
+		"direct > for conversation"
+		"math_code > for calculation or programmation"
+		"vision > when a picture is submitted"
+		)
 	)
 	reasoning: str = Field( description="synthetic justification for model choice")
 
@@ -35,10 +59,14 @@ router = generic.with_structured_output(Route_Structure)
 
 class State(TypedDict):
 	messages: Annotated[list[BaseMessage], add_messages]
+	pic_path: str
 	nextnode: str
 
 def router_node(state: State):
-	tool: Route_Structure = router.invoke(state["messages"])
+	m_payload = list(state["messages"])
+	if state.get("pic_path"):
+		m_payload[-1] = HumanMessage(content=f"{m_payload[-1].content}\n[System Context: A picture has been submitted by the User. It can be evaluated by selecting the Vision tool]")
+	tool: Route_Structure = router.invoke(m_payload)
 	return {"nextnode": tool.target}
 
 def direct_node(state: State):
@@ -50,7 +78,16 @@ def expert_node(state: State):
 	return {"messages": [answer]}
 
 def vision_node(state: State):
-	answer = vision.invoke(state["messages"])
+	if not state.get("pic_path"): 	
+		print("vision node failure...") 
+	pic_url = pic_encoding(state["pic_path"])
+	payload = [
+		{"type": "text", "text": state["messages"][-1].content},
+		{"type": "image_url", "image_url": {"url": pic_url} }
+	]
+	
+	answer = vision.invoke(payload)
+	return {"messages": [answer]}
 
 #LangGraph building 
 
@@ -81,7 +118,7 @@ workflow.add_conditional_edges(
 	}
 )
 
-#closing edges - 
+#closing edges
 workflow.add_edge("direct", END) 
 workflow.add_edge("expert", END) 
 workflow.add_edge("vision", END) 
