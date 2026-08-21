@@ -22,7 +22,7 @@ Basic script to quickly __start__ or __kill__ the models' respective **llama-ser
 
 ### `server_start.py`
 
-** -- work in progress -- **
+**-- work in progress --**
 
 Python **llama server** managing solution.
 Shall allow for model status overview & resource allocation 
@@ -37,7 +37,7 @@ a simple prompt.
 
 ### `cli.py`
 
-Basic CLI enabling conversation with the models. Hangles prompts & picture submission (*local path based*).
+Basic CLI enabling conversation with the models. Handles prompts & picture submission (*local path based*).
 
 ## Agent Graph 
 

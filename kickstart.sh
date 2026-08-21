@@ -18,7 +18,9 @@ case $1 in
 		pkill -9 llama-server
 		echo "llama-server killed"
 		;;
-
+	d)
+		docker compose -f ./container/docker-compose.yml up -d  
+		;;
 	*)
 		echo "kickstart.sh >"
 		echo "s - starting all 3 models" 

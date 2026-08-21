@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    ports:
+      - "8089:8080"
+    volumes:
+      - ./searxng:/etc/searxng:rw
+    environment:
+      # Required to prevent SSRF protection from blocking local requests
+      - SEARXNG_BASE_URL=http://localhost:8089/
+    # linux capabilities limitations 
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    restart: unless-stopped
+
+  llm-sandbox:
+    image: python:3.11-alpine
+    container_name: python_sandbox
+    command: ["sleep", "infinity"] # sleeping indefinitely - keeping the container live  
+    # SECURITY 
+    network_mode: "none" # disabling internet access
+    read_only: true      # enforcing read-only
+    tmpfs:
+      - /tmp             # providing write access on /tmp files 
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 100M
