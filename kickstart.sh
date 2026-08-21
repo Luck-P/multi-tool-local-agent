@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#basic kickstarter for llama-server boot up
+#basic kickstarter for llama-server & docker boot up
 
 GGUF_FOLDER="/home/luck/hfmodels"
 
